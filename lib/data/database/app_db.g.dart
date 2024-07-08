@@ -98,9 +98,9 @@ class _$AppDatabase extends AppDatabase {
       },
       onCreate: (database, version) async {
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Bookmark` (`catalogueId` INTEGER NOT NULL, `pageNumber` INTEGER NOT NULL, PRIMARY KEY (`catalogueId`))');
+            'CREATE TABLE IF NOT EXISTS `Bookmark` (`fileId` INTEGER NOT NULL, `pageNumber` INTEGER NOT NULL, PRIMARY KEY (`fileId`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Note` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `catalogueId` INTEGER NOT NULL, `pageNumber` INTEGER NOT NULL, `note` TEXT NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `Note` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `fileId` INTEGER NOT NULL, `pageNumber` INTEGER NOT NULL, `note` TEXT NOT NULL)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -128,15 +128,15 @@ class _$BookmarkDao extends BookmarkDao {
             database,
             'Bookmark',
             (Bookmark item) => <String, Object?>{
-                  'catalogueId': item.catalogueId,
+                  'fileId': item.fileId,
                   'pageNumber': item.pageNumber
                 }),
         _bookmarkDeletionAdapter = DeletionAdapter(
             database,
             'Bookmark',
-            ['catalogueId'],
+            ['fileId'],
             (Bookmark item) => <String, Object?>{
-                  'catalogueId': item.catalogueId,
+                  'fileId': item.fileId,
                   'pageNumber': item.pageNumber
                 });
 
@@ -151,12 +151,12 @@ class _$BookmarkDao extends BookmarkDao {
   final DeletionAdapter<Bookmark> _bookmarkDeletionAdapter;
 
   @override
-  Future<Bookmark?> findBookmarkByCatalogueId(int catalogueId) async {
-    return _queryAdapter.query('SELECT * FROM Bookmark WHERE catalogueId = ?1',
+  Future<Bookmark?> findBookmarkByFileId(int fileId) async {
+    return _queryAdapter.query('SELECT * FROM Bookmark WHERE fileId = ?1',
         mapper: (Map<String, Object?> row) => Bookmark(
-            catalogueId: row['catalogueId'] as int,
+            fileId: row['fileId'] as int,
             pageNumber: row['pageNumber'] as int),
-        arguments: [catalogueId]);
+        arguments: [fileId]);
   }
 
   @override
@@ -181,7 +181,7 @@ class _$NoteDao extends NoteDao {
             'Note',
             (Note item) => <String, Object?>{
                   'id': item.id,
-                  'catalogueId': item.catalogueId,
+                  'fileId': item.fileId,
                   'pageNumber': item.pageNumber,
                   'note': item.note
                 }),
@@ -191,7 +191,7 @@ class _$NoteDao extends NoteDao {
             ['id'],
             (Note item) => <String, Object?>{
                   'id': item.id,
-                  'catalogueId': item.catalogueId,
+                  'fileId': item.fileId,
                   'pageNumber': item.pageNumber,
                   'note': item.note
                 });
@@ -208,17 +208,17 @@ class _$NoteDao extends NoteDao {
 
   @override
   Future<List<Note>?> findNotesInPage(
-    int catalogueId,
+    int fileId,
     int pageNumber,
   ) async {
     return _queryAdapter.queryList(
-        'SELECT * FROM Note WHERE catalogueId = ?1 AND pageNumber = ?2',
+        'SELECT * FROM Note WHERE fileId = ?1 AND pageNumber = ?2',
         mapper: (Map<String, Object?> row) => Note(
             id: row['id'] as int,
-            catalogueId: row['catalogueId'] as int,
+            fileId: row['fileId'] as int,
             pageNumber: row['pageNumber'] as int,
             note: row['note'] as String),
-        arguments: [catalogueId, pageNumber]);
+        arguments: [fileId, pageNumber]);
   }
 
   @override

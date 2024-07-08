@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:no_screenshot/no_screenshot.dart';
+import 'package:pdf_sample/data/resource_states.dart';
 import 'package:pdf_sample/pages/landing/landing_controller.dart';
 import 'package:pdf_sample/pages/pdf/pdf_page.dart';
 
@@ -11,19 +13,13 @@ class LandingPage extends StatefulWidget {
 }
 
 class _LandingPageState extends State<LandingPage> {
-
   final LandingController controller = LandingController();
-  String pdfPath = "";
 
   @override
   void initState() {
     super.initState();
     NoScreenshot.instance.screenshotOff();
-    controller.createFileOfPdfUrl().then((f) {
-      setState(() {
-        pdfPath = f.path;
-      });
-    });
+    controller.createFileOfPdfUrl();
   }
 
   @override
@@ -31,21 +27,35 @@ class _LandingPageState extends State<LandingPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Plugin example app')),
       body: Center(
-        child: Column(
-          children: <Widget>[
-            TextButton(
-              child: const Text("Open PDF"),
-              onPressed: () {
-                if (pdfPath.isNotEmpty) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => PDFScreen(path: pdfPath)),
-                  );
-                }
-              },
-            ),
-          ],
-        ),
+        child: Obx(() {
+          StateResource loadFileState = controller.loadFileState.value;
+          if (loadFileState.isInit() || loadFileState.isLoading()) {
+            return const CircularProgressIndicator();
+          }
+          if (loadFileState.isError()) {
+            String error = loadFileState.error!;
+            return Text(error);
+          }
+          String pdfPath = loadFileState.data as String;
+          return ElevatedButton(
+            child: const Text("Open file"),
+            onPressed: () {
+              if (pdfPath.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => PDFScreen(path: pdfPath)),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Error occurred: file path is empty'),
+                    action: SnackBarAction(label: 'Dismiss', onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar()),
+                  ),
+                );
+              }
+            },
+          );
+        }),
       ),
     );
   }

@@ -20,7 +20,7 @@ class AddNoteDialog extends StatelessWidget {
           onPressed: () {
             Note note = Note(
               id: null,
-              catalogueId: controller.catalogueId,
+              fileId: controller.fileId,
               pageNumber: controller.currentPage.value,
               note: textEditingController.text,
             );

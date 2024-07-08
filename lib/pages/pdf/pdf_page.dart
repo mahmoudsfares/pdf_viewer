@@ -1,8 +1,8 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:get/get.dart';
 import 'package:pdf_sample/data/entities/bookmark.dart';
+import 'package:pdf_sample/data/resource_states.dart';
 import 'package:pdf_sample/pages/notes/add_note_dialog.dart';
 import 'package:pdf_sample/pages/notes/notes_bms.dart';
 import 'package:pdf_sample/pages/pdf/pdf_controller.dart';
@@ -16,25 +16,20 @@ class PDFScreen extends StatefulWidget {
   _PDFScreenState createState() => _PDFScreenState();
 }
 
-class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
-  final Completer<PDFViewController> pdfController = Completer<PDFViewController>();
-
+class _PDFScreenState extends State<PDFScreen> {
   final PDFController controller = PDFController();
-
-  bool isReady = false;
-  String errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    controller.getBookmark();
+    controller.checkForBookmark();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Document"),
+        title: const Text('Document'),
         actions: <Widget>[
           PopupMenuButton<int>(
             onSelected: (int result) {
@@ -45,24 +40,23 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-              const PopupMenuItem<int>(
-                value: 0,
-                child: Text('Add Note'),
-              ),
-              const PopupMenuItem<int>(
-                value: 1,
-                child: Text('Show Notes'),
-              ),
+              const PopupMenuItem<int>(value: 0, child: Text('Add Note')),
+              const PopupMenuItem<int>(value: 1, child: Text('Show Notes')),
             ],
           ),
         ],
       ),
       body: Obx(
         () {
-          int bookmark = controller.bookmarkPage.value;
-          if (bookmark == -2) {
+          StateResource bookmark = controller.loadFileState.value;
+          if (bookmark.isInit() || bookmark.isLoading()) {
             return const CircularProgressIndicator();
           }
+          if (bookmark.isError()) {
+            String error = bookmark.error!;
+            return Center(child: Text(error));
+          }
+          int bookmarkPage = bookmark.data as int;
           return Stack(
             children: <Widget>[
               PDFView(
@@ -70,64 +64,30 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
                 enableSwipe: true,
                 swipeHorizontal: true,
                 autoSpacing: false,
+                // if set to false, the user must use a more deliberate scrolling motion to navigate between pages
                 pageFling: true,
+                // if set to true, the PDF will adjust so that a full page is always visible. if set to false, partial pages can be visible.
                 pageSnap: true,
-                defaultPage: bookmark < 0 ? 0 : bookmark,
+                defaultPage: bookmarkPage < 0 ? 0 : bookmarkPage,
                 fitPolicy: FitPolicy.BOTH,
-                // if set to true the link is handled in flutter
                 preventLinkNavigation: false,
-                onRender: (pageCount) {
-                  setState(() {
-                    isReady = true;
-                  });
-                },
-                onError: (error) {
-                  setState(() {
-                    errorMessage = error.toString();
-                  });
-                  print(error.toString());
-                },
-                onPageError: (page, error) {
-                  setState(() {
-                    errorMessage = '$page: ${error.toString()}';
-                  });
-                  print('$page: ${error.toString()}');
-                },
-                onViewCreated: (PDFViewController pdfViewController) {
-                  pdfController.complete(pdfViewController);
-                },
-                onPageChanged: (int? page, int? total) {
-                  controller.currentPage.value = page ?? 0;
-                },
+                onError: (error) => controller.onError(error.toString()),
+                onPageError: (page, error) => controller.onError(error.toString()),
+                onPageChanged: (int? page, int? total) => controller.currentPage.value = page ?? 0,
               ),
-              errorMessage.isEmpty
-                  ? !isReady
-                      ? const Center(child: CircularProgressIndicator())
-                      : Container()
-                  : Center(
-                      child: Text(errorMessage),
-                    )
             ],
           );
         },
       ),
       floatingActionButton: Obx(() {
-        bool isBookmarked = controller.currentPage.value == controller.bookmarkPage.value;
-        return FutureBuilder(
-          future: pdfController.future,
-          builder: (context, AsyncSnapshot<PDFViewController> snapshot) {
-            if (snapshot.hasData) {
-              return FloatingActionButton(
-                onPressed: () async {
-                  Bookmark bookmark = Bookmark(catalogueId: controller.catalogueId, pageNumber: controller.currentPage.value);
-                  isBookmarked ? await controller.removeBookmark(bookmark) : await controller.addBookmark(bookmark);
-                },
-                backgroundColor: Colors.white,
-                child: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border, color: Colors.black),
-              );
-            }
-            return const SizedBox();
+        bool isBookmarked = controller.currentPage.value == (controller.loadFileState.value.data as int);
+        return FloatingActionButton(
+          onPressed: () async {
+            Bookmark bookmark = Bookmark(fileId: controller.fileId, pageNumber: controller.currentPage.value);
+            isBookmarked ? await controller.removeBookmark(bookmark) : await controller.addBookmark(bookmark);
           },
+          backgroundColor: Colors.white,
+          child: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border, color: Colors.black),
         );
       }),
     );

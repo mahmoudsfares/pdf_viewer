@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf_sample/data/resource_states.dart';
 
 class LandingController {
 
-  Future<File> createFileOfPdfUrl() async {
-    Completer<File> completer = Completer();
-    print("Start download file from internet!");
+  Rx<StateResource<String>> loadFileState = StateResource<String>.init().obs;
+
+  Future<void> createFileOfPdfUrl() async {
+    loadFileState.value = StateResource.loading();
     try {
       String url = "https://pdfkit.org/docs/guide.pdf";
       String filename = url.substring(url.lastIndexOf("/") + 1);
@@ -15,15 +18,11 @@ class LandingController {
       HttpClientResponse response = await request.close();
       Uint8List bytes = await consolidateHttpClientResponseBytes(response);
       Directory dir = await getApplicationDocumentsDirectory();
-      print("Download files");
-      print("${dir.path}/$filename");
       File file = File("${dir.path}/$filename");
       await file.writeAsBytes(bytes, flush: true);
-      completer.complete(file);
+      loadFileState.value = StateResource.success(file.path);
     } catch (e) {
-      throw Exception('Error occurred!');
+      loadFileState.value = StateResource.error(e.toString());
     }
-    return completer.future;
   }
-
 }
