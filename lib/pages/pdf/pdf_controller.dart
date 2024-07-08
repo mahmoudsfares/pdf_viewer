@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:get/get.dart';
+import 'package:get/get_rx/get_rx.dart';
 import 'package:pdf_sample/data/database/app_db.dart';
 import 'package:pdf_sample/data/entities/bookmark.dart';
 
@@ -14,39 +16,39 @@ class PDFController {
 
   final AppDatabase database = AppDatabase.getInstance();
 
-  void getBookmark(int catalogueId) async {
+  RxInt bookmarkPage = (-2).obs; // -2: not fetched yet, -1: no bookmark
+  RxInt currentPage = 0.obs;
+
+  Future<void> getBookmark(int catalogueId) async {
     try {
       Bookmark? bookmark = await database.bookmarkDao.findBookmarkByCatalogueId(catalogueId);
-      _getBookmarkStreamController.sink.add(bookmark);
+      if(bookmark != null) {
+        bookmarkPage.value = bookmark.pageNumber;
+      } else {
+        bookmarkPage.value = -1;
+      }
     } catch (e) {
-      // the only probable error to occur is not finding the searched person
-      _getBookmarkStreamController.sink.add(null);
+      bookmarkPage.value = -1;
     }
   }
 
-  void addBookmark(Bookmark bookmark) async {
-    try{
+  Future<void> addBookmark(Bookmark bookmark) async {
+    try {
       await database.bookmarkDao.insertBookmark(bookmark);
-      // add 0 to the stream if the person was added successfully
-      _addBookmarkStreamController.sink.add(0);
+      bookmarkPage.value = bookmark.pageNumber;
     }
     catch (e){
-      // add -1 to the stream if the person was not added
-      // most probably unique constraint failed (duplicate primary keys)
-      _addBookmarkStreamController.sink.add(-1);
+      // TODO
     }
   }
 
-  void removeBookmark(Bookmark bookmark) async {
+  Future<void> removeBookmark(Bookmark bookmark) async {
     try{
       await database.bookmarkDao.removeBookmark(bookmark);
-      // add 0 to the stream if the person was added successfully
-      _removeBookmarkStreamController.sink.add(0);
+      bookmarkPage.value = -1;
     }
     catch (e){
-      // add -1 to the stream if the person was not added
-      // most probably unique constraint failed (duplicate primary keys)
-      _removeBookmarkStreamController.sink.add(-1);
+      // TODO
     }
   }
 
