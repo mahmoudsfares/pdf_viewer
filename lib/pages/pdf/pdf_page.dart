@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:get/get.dart';
 import 'package:pdf_sample/data/entities/bookmark.dart';
+import 'package:pdf_sample/pages/notes/add_note_dialog.dart';
+import 'package:pdf_sample/pages/notes/notes_bms.dart';
 import 'package:pdf_sample/pages/pdf/pdf_controller.dart';
 
 class PDFScreen extends StatefulWidget {
@@ -19,20 +21,31 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
 
   final PDFController controller = PDFController();
 
-  final int catalogueId = 1;
   bool isReady = false;
   String errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    controller.getBookmark(catalogueId);
+    controller.getBookmark();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Document")),
+      appBar: AppBar(
+        title: const Text("Document"),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => showDialog(context: context, builder: (_) => AddNoteDialog(controller: controller)),
+            child: const Text('Add Note'),
+          ),
+          TextButton(
+            onPressed: () => showModalBottomSheet(context: context, builder: (_) => NotesBMS(controller: controller)),
+            child: const Text('Show Notes'),
+          ),
+        ],
+      ),
       body: Obx(
         () {
           int bookmark = controller.bookmarkPage.value;
@@ -95,7 +108,7 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
             if (snapshot.hasData) {
               return FloatingActionButton(
                 onPressed: () async {
-                  Bookmark bookmark = Bookmark(catalogueId: catalogueId, pageNumber: controller.currentPage.value);
+                  Bookmark bookmark = Bookmark(catalogueId: controller.catalogueId, pageNumber: controller.currentPage.value);
                   isBookmarked ? await controller.removeBookmark(bookmark) : await controller.addBookmark(bookmark);
                 },
                 backgroundColor: Colors.white,

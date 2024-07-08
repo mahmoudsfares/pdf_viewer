@@ -3,23 +3,17 @@ import 'package:get/get.dart';
 import 'package:get/get_rx/get_rx.dart';
 import 'package:pdf_sample/data/database/app_db.dart';
 import 'package:pdf_sample/data/entities/bookmark.dart';
+import 'package:pdf_sample/data/entities/note.dart';
+import 'package:pdf_sample/data/resource_states.dart';
 
 class PDFController {
-
-  final StreamController<Bookmark?> _getBookmarkStreamController = StreamController<Bookmark>();
-  final StreamController<int> _addBookmarkStreamController = StreamController<int>();
-  final StreamController<int> _removeBookmarkStreamController = StreamController<int>();
-
-  Stream<Bookmark?> get getBookmarkStream => _getBookmarkStreamController.stream;
-  Stream<int> get addBookmarkStream => _addBookmarkStreamController.stream;
-  Stream<int> get removeBookmarkStream => _removeBookmarkStreamController.stream;
-
   final AppDatabase database = AppDatabase.getInstance();
 
-  RxInt bookmarkPage = (-2).obs; // -2: not fetched yet, -1: no bookmark
+  final int catalogueId = 1;
+  RxInt bookmarkPage = (-2).obs; // -2: inti (not fetched yet), -1: no bookmark
   RxInt currentPage = 0.obs;
 
-  Future<void> getBookmark(int catalogueId) async {
+  Future<void> getBookmark() async {
     try {
       Bookmark? bookmark = await database.bookmarkDao.findBookmarkByCatalogueId(catalogueId);
       if(bookmark != null) {
@@ -52,9 +46,35 @@ class PDFController {
     }
   }
 
-  void dispose() {
-    _getBookmarkStreamController.close();
-    _addBookmarkStreamController.close();
-    _removeBookmarkStreamController.close();
+  Rx<StateResource<List<Note>>> notes = StateResource<List<Note>>.init().obs;
+
+  Future<void> getNotes() async {
+    notes.value = StateResource.loading();
+    try {
+      List<Note> notes = await database.noteDao.findNotesInPage(catalogueId, currentPage.value) ?? List<Note>.empty();
+      this.notes.value = StateResource<List<Note>>.success(notes);
+    } catch (e) {
+      notes.value = StateResource.error('Error');
+    }
+  }
+
+  Future<void> addNote(Note note) async {
+    notes.value = StateResource.loading();
+    try {
+      await database.noteDao.insertNote(note);
+      getNotes();
+    } catch(e) {
+      notes.value = StateResource.error('Error');
+    }
+  }
+
+  Future<void> removeNote(Note note) async {
+    notes.value = StateResource.loading();
+    try {
+      await database.noteDao.removeNote(note);
+      getNotes();
+    } catch(e) {
+      notes.value = StateResource.error('Error');
+    }
   }
 }
