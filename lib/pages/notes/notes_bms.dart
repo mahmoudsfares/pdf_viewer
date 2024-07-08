@@ -15,7 +15,6 @@ class NotesBMS extends StatefulWidget {
 }
 
 class _NotesBMSState extends State<NotesBMS> {
-
   @override
   void initState() {
     super.initState();
@@ -37,14 +36,15 @@ class _NotesBMSState extends State<NotesBMS> {
           if (stateResource.isSuccess()) {
             List<Note> notes = stateResource.data as List<Note>;
             if (notes.isEmpty) {
+              return const Center(child: Text('No notes in this page'));
             } else {
               return ListView.builder(
                 itemCount: notes.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return NoteTile(note: notes[index], onRemoveNote: (Note note) {
-                    widget.controller.removeNote(note);
-                    Navigator.pop(context);
-                  });
+                  return NoteTile(
+                    note: notes[index],
+                    onRemoveNote: (Note note) => widget.controller.removeNote(note),
+                  );
                 },
               );
             }

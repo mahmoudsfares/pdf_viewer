@@ -10,30 +10,26 @@ class AddNoteDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          TextField(
-            controller: textEditingController,
-            decoration: const InputDecoration(label: Text('Add note'), hintText: 'Add note'),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                Note note = Note(
-                  id: null,
-                  catalogueId: controller.catalogueId,
-                  pageNumber: controller.currentPage.value,
-                  note: textEditingController.text,
-                );
-                controller.addNote(note);
-              },
-              child: const Text('Save'),
-            ),
-          )
-        ],
+    return AlertDialog(
+      content: TextField(
+        controller: textEditingController,
+        decoration: const InputDecoration(label: Text('Add note')),
       ),
+      actions: [
+        ElevatedButton(
+          onPressed: () {
+            Note note = Note(
+              id: null,
+              catalogueId: controller.catalogueId,
+              pageNumber: controller.currentPage.value,
+              note: textEditingController.text,
+            );
+            controller.addNote(note);
+            Navigator.pop(context);
+          },
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }

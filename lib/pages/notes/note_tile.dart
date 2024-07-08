@@ -10,11 +10,19 @@ class NoteTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(child: Text(note.note)),
-        IconButton(onPressed: () => onRemoveNote(note), icon: const Icon(Icons.cancel, color: Colors.red))
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              Expanded(child: Text(note.note)),
+              IconButton(onPressed: () => onRemoveNote(note), icon: const Icon(Icons.cancel, color: Colors.red))
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

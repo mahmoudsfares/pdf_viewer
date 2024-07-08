@@ -36,13 +36,24 @@ class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
       appBar: AppBar(
         title: const Text("Document"),
         actions: <Widget>[
-          TextButton(
-            onPressed: () => showDialog(context: context, builder: (_) => AddNoteDialog(controller: controller)),
-            child: const Text('Add Note'),
-          ),
-          TextButton(
-            onPressed: () => showModalBottomSheet(context: context, builder: (_) => NotesBMS(controller: controller)),
-            child: const Text('Show Notes'),
+          PopupMenuButton<int>(
+            onSelected: (int result) {
+              if (result == 0) {
+                showDialog(context: context, builder: (_) => AddNoteDialog(controller: controller));
+              } else if (result == 1) {
+                showModalBottomSheet(context: context, builder: (_) => NotesBMS(controller: controller));
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+              const PopupMenuItem<int>(
+                value: 0,
+                child: Text('Add Note'),
+              ),
+              const PopupMenuItem<int>(
+                value: 1,
+                child: Text('Show Notes'),
+              ),
+            ],
           ),
         ],
       ),
