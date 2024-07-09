@@ -13,22 +13,24 @@ class LandingPage extends StatefulWidget {
 }
 
 class _LandingPageState extends State<LandingPage> {
+
+  static const String url = "https://pdfkit.org/docs/guide.pdf";
   final LandingController controller = LandingController();
 
   @override
   void initState() {
     super.initState();
     NoScreenshot.instance.screenshotOff();
-    controller.createFileOfPdfUrl();
+    controller.createFileOfPdfUrl(url);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Plugin example app')),
+      appBar: AppBar(title: const Text('PDF reader')),
       body: Center(
         child: Obx(() {
-          StateResource loadFileState = controller.loadFileState.value;
+          StateResource loadFileState = controller.loadFileState;
           if (loadFileState.isInit() || loadFileState.isLoading()) {
             return const CircularProgressIndicator();
           }
@@ -38,7 +40,7 @@ class _LandingPageState extends State<LandingPage> {
           }
           String pdfPath = loadFileState.data as String;
           return ElevatedButton(
-            child: const Text("Open file"),
+            child: const Text('Open file'),
             onPressed: () {
               if (pdfPath.isNotEmpty) {
                 Navigator.push(

@@ -48,7 +48,7 @@ class _PDFScreenState extends State<PDFScreen> {
       ),
       body: Obx(
         () {
-          StateResource bookmark = controller.loadFileState.value;
+          StateResource bookmark = controller.loadBookmarkState;
           if (bookmark.isInit() || bookmark.isLoading()) {
             return const CircularProgressIndicator();
           }
@@ -71,8 +71,8 @@ class _PDFScreenState extends State<PDFScreen> {
                 defaultPage: bookmarkPage < 0 ? 0 : bookmarkPage,
                 fitPolicy: FitPolicy.BOTH,
                 preventLinkNavigation: false,
-                onError: (error) => controller.onError(error.toString()),
-                onPageError: (page, error) => controller.onError(error.toString()),
+                onError: (error) => controller.onFileLoadingError(error.toString()),
+                onPageError: (page, error) => controller.onFileLoadingError(error.toString()),
                 onPageChanged: (int? page, int? total) => controller.currentPage.value = page ?? 0,
               ),
             ],
@@ -80,7 +80,11 @@ class _PDFScreenState extends State<PDFScreen> {
         },
       ),
       floatingActionButton: Obx(() {
-        bool isBookmarked = controller.currentPage.value == (controller.loadFileState.value.data as int);
+        // avoid casting exception when bookmark page data is not ready yet (init, loading..)
+        StateResource loadFileState = controller.loadBookmarkState;
+        if (!loadFileState.isSuccess()) return const SizedBox();
+        int bookmark = controller.loadBookmarkState.data as int;
+        bool isBookmarked = controller.currentPage.value == bookmark;
         return FloatingActionButton(
           onPressed: () async {
             Bookmark bookmark = Bookmark(fileId: controller.fileId, pageNumber: controller.currentPage.value);

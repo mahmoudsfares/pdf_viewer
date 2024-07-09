@@ -26,7 +26,7 @@ class _NotesBMSState extends State<NotesBMS> {
     return Scaffold(
       body: Obx(
         () {
-          StateResource stateResource = widget.controller.notes.value;
+          StateResource stateResource = widget.controller.loadNotesState;
           if (stateResource.isLoading()) {
             return const Center(child: CircularProgressIndicator());
           }

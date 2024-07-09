@@ -12,74 +12,76 @@ class PDFController {
   final int fileId = 1;
 
   // saves the value of the bookmarked page, if set to success(-1): no bookmark
-  Rx<StateResource<int>> loadFileState = StateResource<int>.init().obs;
+  final Rx<StateResource<int>> _loadBookmarkState = StateResource<int>.init().obs;
+  StateResource<int> get loadBookmarkState => _loadBookmarkState.value;
+  void onFileLoadingError(String error) => _loadBookmarkState.value = StateResource.error(error);
+
   RxInt currentPage = 0.obs;
 
   Future<void> checkForBookmark() async {
-    loadFileState.value = StateResource.loading();
+    _loadBookmarkState.value = StateResource.loading();
     try {
       Bookmark? bookmark = await database.bookmarkDao.findBookmarkByFileId(fileId);
       if(bookmark != null) {
-        loadFileState.value = StateResource.success(bookmark.pageNumber);
+        _loadBookmarkState.value = StateResource.success(bookmark.pageNumber);
       } else {
-        loadFileState.value = StateResource.success(-1);
+        _loadBookmarkState.value = StateResource.success(-1);
       }
     } catch (e) {
-      loadFileState.value = StateResource.error('Error loading file');
+      _loadBookmarkState.value = StateResource.error('Error loading file');
     }
   }
 
   Future<void> addBookmark(Bookmark bookmark) async {
     try {
       await database.bookmarkDao.insertBookmark(bookmark);
-      loadFileState.value = StateResource.success(bookmark.pageNumber);
+      _loadBookmarkState.value = StateResource.success(bookmark.pageNumber);
     }
     catch (e){
-      loadFileState.value = StateResource.error('Error occurred');
+      _loadBookmarkState.value = StateResource.error('Error occurred');
     }
   }
 
   Future<void> removeBookmark(Bookmark bookmark) async {
     try{
       await database.bookmarkDao.removeBookmark(bookmark);
-      loadFileState.value = StateResource.success(-1);
+      _loadBookmarkState.value = StateResource.success(-1);
     }
     catch (e){
-      loadFileState.value = StateResource.error('Error occurred');
+      _loadBookmarkState.value = StateResource.error('Error occurred');
     }
   }
 
-  void onError(String error) => loadFileState.value = StateResource.error(error);
-
-  Rx<StateResource<List<Note>>> notes = StateResource<List<Note>>.init().obs;
+  final Rx<StateResource<List<Note>>> _loadNotesState = StateResource<List<Note>>.init().obs;
+  StateResource<List<Note>> get loadNotesState => _loadNotesState.value;
 
   Future<void> getNotes() async {
-    notes.value = StateResource.loading();
+    _loadNotesState.value = StateResource.loading();
     try {
       List<Note> notes = await database.noteDao.findNotesInPage(fileId, currentPage.value) ?? List<Note>.empty();
-      this.notes.value = StateResource<List<Note>>.success(notes);
+      _loadNotesState.value = StateResource<List<Note>>.success(notes);
     } catch (e) {
-      notes.value = StateResource.error('Error loading notes');
+      _loadNotesState.value = StateResource.error('Error loading notes');
     }
   }
 
   Future<void> addNote(Note note) async {
-    notes.value = StateResource.loading();
+    _loadNotesState.value = StateResource.loading();
     try {
       await database.noteDao.insertNote(note);
       getNotes();
     } catch(e) {
-      notes.value = StateResource.error('Error occurred');
+      _loadNotesState.value = StateResource.error('Error occurred');
     }
   }
 
   Future<void> removeNote(Note note) async {
-    notes.value = StateResource.loading();
+    _loadNotesState.value = StateResource.loading();
     try {
       await database.noteDao.removeNote(note);
       getNotes();
     } catch(e) {
-      notes.value = StateResource.error('Error occurred');
+      _loadNotesState.value = StateResource.error('Error occurred');
     }
   }
 }
